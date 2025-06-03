@@ -1,0 +1,42 @@
+name: Deploy Docusaurus to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main # ← mainブランチにpushされたらデプロイする
+  workflow_dispatch: # ← 手動実行も可能
+
+permissions:
+  contents: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # ← docusaurus deployには全履歴が必要
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22 # ← 使用しているNode.jsバージョンに合わせる
+          cache: npm
+          cache-dependency-path: ./docusaurus/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+        working-directory: ./docusaurus
+
+      - name: Build Docusaurus
+        run: npm run build
+        working-directory: ./docusaurus
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./docusaurus/build
+          publish_branch: gh-pages

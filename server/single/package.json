@@ -1,0 +1,24 @@
+{
+	"name": "@trustknots/server",
+	"version": "0.1.0",
+	"description": "",
+	"type": "module",
+	"main": "lib/example.js",
+	"private": true,
+	"scripts": {
+		"build": "tsc",
+		"format": "biome format --write ./src/**/*.ts",
+		"test": "node --import tsx --test test/**/*.spec.ts",
+		"start": "tsx src/example.ts",
+		"typecheck": "tsc --noEmit"
+	},
+	"keywords": [],
+	"author": "",
+	"license": "Apache-2.0",
+	"packageManager": "pnpm@10.17.1",
+	"dependencies": {
+		"@hono/node-server": "^1.19.5",
+		"@trustknots/vcknots": "workspace:../../issuer+verifier",
+		"hono": "^4.9.9"
+	}
+}

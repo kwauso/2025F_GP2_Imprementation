@@ -1,0 +1,85 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [ "next" ]
+
+jobs:
+  core:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.11.0
+          run_install: false
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: "pnpm"
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: 1.24.5
+
+      - name: Install dependencies (backend)
+        run: pnpm install --frozen-lockfile
+
+      - name: Install dependencies (wallet)
+        working-directory: ./wallet
+        run: go mod download
+
+      - name: Install staticcheck
+        run: go install honnef.co/go/tools/cmd/staticcheck@latest
+
+      # backend
+      - name: Build
+        run: pnpm -F @trustknots/vcknots build
+
+      - name: Run tests
+        run: |
+          node --import tsx --test --experimental-test-coverage "issuer+verifier/test/**/*.spec.ts"
+
+      - name: Run lint
+        run: |
+          pnpm -F @trustknots/vcknots lint
+
+      # wallet
+      - name: Run tests
+        working-directory: ./wallet
+        run: make test
+
+      - name: Run lint
+        working-directory: ./wallet
+        run: make lint        
+
+      # slack
+      - name: Notify Slack (failure)
+        if: failure()
+        uses: slackapi/slack-github-action@v1.27.0
+        with:
+          payload: |
+            {
+                "username": "CI",
+                "icon_url": "https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png",
+                "text": "❌ CI failed for *${{ github.repository }}* on PR <${{ github.event.pull_request.html_url }}|#${{ github.event.pull_request.number }}>\nRun: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+            }
+        env:
+            SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+      - name: Notify Slack (success)
+        if: success()
+        uses: slackapi/slack-github-action@v1.27.0
+        with:
+          payload: |
+            {
+                "username": "CI",
+                "icon_url": "https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png",
+                "text": "✅ CI passed for *${{ github.repository }}* on PR <${{ github.event.pull_request.html_url }}|#${{ github.event.pull_request.number }}>\nRun: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+            }
+        env:
+            SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+

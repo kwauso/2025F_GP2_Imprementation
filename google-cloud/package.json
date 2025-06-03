@@ -1,0 +1,22 @@
+{
+	"name": "@trustknots/google-cloud",
+	"version": "0.1.0",
+	"description": "",
+	"main": "lib/index.js",
+	"scripts": {
+		"build": "tsc",
+		"format": "biome format --write ./src/**/*.ts",
+		"test": "node --import tsx --test test/**/*.spec.ts",
+		"typecheck": "tsc --noEmit"
+	},
+	"keywords": [],
+	"author": "",
+	"license": "Apache-2.0",
+	"packageManager": "pnpm@10.17.1",
+	"dependencies": {
+		"@google-cloud/kms": "^5.2.0",
+		"@trustknots/vcknots": "workspace:../issuer+verifier",
+		"firebase-admin": "^13.5.0",
+		"zod": "^4.1.11"
+	}
+}
