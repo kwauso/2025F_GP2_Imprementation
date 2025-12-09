@@ -8,6 +8,7 @@ const config: Config = {
   title: 'trustknots/vcknots',
   tagline: 'Pluggable framework for building Verifiable Credentials ecosystems.',
   favicon: 'img/favicon.ico',
+  trailingSlash: false,
 
   // Future flags, see https://docusaurus.io/docs/api/docusaurus-config#future
   future: {
@@ -66,7 +67,9 @@ const config: Config = {
     // Replace with your project's social card
     image: 'img/docusaurus-social-card.jpg',
     colorMode: {
-      respectPrefersColorScheme: true,
+      defaultMode: 'dark',
+      disableSwitch: true,
+      respectPrefersColorScheme: false,
     },
     docs: { sidebar: { autoCollapseCategories: true } },
     navbar: {
