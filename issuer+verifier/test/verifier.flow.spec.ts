@@ -23,6 +23,8 @@ import {
 import { VcknotsContext, initializeContext } from '../src/vcknots.context'
 import { VerifierMetadata } from '../src/verifier-metadata.types'
 import { VerifierFlow, initializeVerifierFlow } from '../src/verifier.flows'
+import { TransactionDataProvider } from '../src/providers'
+import base64url from 'base64url'
 
 type JwtHeader = {
   alg: string
@@ -128,6 +130,13 @@ describe('VerifierFlow', () => {
     generate: mock.fn(),
   } satisfies RequestObjectIdProvider
 
+  const mockTransactionDataProvider = {
+    kind: 'transaction-data-provider',
+    name: 'mock-transaction-data-provider',
+    single: true,
+    generate: mock.fn(),
+  } satisfies TransactionDataProvider
+
   const mockKeyProvider = {
     kind: 'verifier-signature-key-provider',
     name: 'mock-verifier-signature-key-provider',
@@ -163,6 +172,7 @@ describe('VerifierFlow', () => {
         mockDidProvider,
         mockRequestObjectStoreProvider,
         mockRequestObjectIdProvider,
+        mockTransactionDataProvider,
         mockKeyProvider,
         mockKeyStoreProvider,
       ],
@@ -175,7 +185,8 @@ describe('VerifierFlow', () => {
       const metadata = VerifierMetadata({
         client_name: 'Test Verifier',
         vp_formats: {
-          jwt_vp_json: { alg_values_supported: ['ES256'] },
+          jwt_vc_json: { alg_values_supported: ['ES256'] },
+          jwt_vp_json: { alg_values_supported: ['ES256'] }
         },
       })
       // Mock the key provider's generate function
@@ -194,9 +205,9 @@ describe('VerifierFlow', () => {
       // Mock the key provider's canHandle function
       mock.method(mockKeyProvider, 'canHandle', () => true)
       // Mock the key store's save function
-      mock.method(mockKeyStoreProvider, 'save', async () => {})
+      mock.method(mockKeyStoreProvider, 'save', async () => { })
       // Mock the metadata store's save function
-      mock.method(mockVerifierMetadataStore, 'save', async () => {})
+      mock.method(mockVerifierMetadataStore, 'save', async () => { })
 
       await verifierFlow.createVerifierMetadata(ClientId('https://example.com'), metadata)
 
@@ -214,8 +225,11 @@ describe('VerifierFlow', () => {
       const metadata = VerifierMetadata({
         client_name: 'Test Verifier',
         vp_formats: {
+          jwt_vc_json: {
+            alg_values_supported: ['ES256'],
+          },
           jwt_vp_json: {
-            alg: ['ES256'],
+            alg_values_supported: ['ES256'],
           },
           ldp_vp: {
             proof_type: ['JsonWebSignature2020'],
@@ -244,7 +258,7 @@ describe('VerifierFlow', () => {
 
       mock.method(mockVerifierMetadataStore, 'fetch', async () => metadata)
       mock.method(mockCnonceProvider, 'generate', async () => 'nonce-123')
-      mock.method(mockCnonceStoreProvider, 'save', async () => {})
+      mock.method(mockCnonceStoreProvider, 'save', async () => { })
       mock.method(
         mockCredentialQueryProvider,
         'generate',
@@ -274,11 +288,18 @@ describe('VerifierFlow', () => {
       const metadata = VerifierMetadata({
         client_name: 'Test Verifier',
         vp_formats: {
+          jwt_vc_json: {
+            alg_values_supported: ['ES256'],
+          },
           jwt_vp_json: {
-            alg: ['ES256'],
+            alg_values_supported: ['ES256'],
           },
           ldp_vp: {
             proof_type: ['JsonWebSignature2020'],
+          },
+          'dc+sd-jwt': {
+            'sd-jwt_alg_values': ['ES256', 'ES384'],
+            'kb-jwt_alg_values': ['ES256', 'ES384'],
           },
         },
       })
@@ -301,7 +322,7 @@ describe('VerifierFlow', () => {
 
       mock.method(mockVerifierMetadataStore, 'fetch', async () => metadata)
       mock.method(mockCnonceProvider, 'generate', async () => 'nonce-123')
-      mock.method(mockCnonceStoreProvider, 'save', async () => {})
+      mock.method(mockCnonceStoreProvider, 'save', async () => { })
       mock.method(
         mockCredentialQueryProvider,
         'generate',
@@ -310,6 +331,13 @@ describe('VerifierFlow', () => {
           return Dcql(options.query)
         }
       )
+      mock.method(mockTransactionDataProvider, 'generate', (type: string, ids: string[]) => {
+        const data = {
+          type,
+          credential_ids: ids,
+        }
+        return base64url.encode(JSON.stringify(data))
+      })
 
       const req = await verifierFlow.createAuthzRequest(
         ClientId('did:key:verifier'),
@@ -366,8 +394,11 @@ describe('VerifierFlow', () => {
       const metadata = VerifierMetadata({
         client_name: 'Test Verifier',
         vp_formats: {
+          jwt_vc_json: {
+            alg_values_supported: ['ES256'],
+          },
           jwt_vp_json: {
-            alg: ['ES256'],
+            alg_values_supported: ['ES256'],
           },
           ldp_vp: {
             proof_type: ['JsonWebSignature2020'],
@@ -403,7 +434,7 @@ describe('VerifierFlow', () => {
         }
       )
       mock.method(mockRequestObjectIdProvider, 'generate', async () => '1234')
-      mock.method(mockRequestObjectStoreProvider, 'save', async () => {})
+      mock.method(mockRequestObjectStoreProvider, 'save', async () => { })
 
       const req = await verifierFlow.createAuthzRequest(
         ClientId('https://example.com'),
@@ -432,8 +463,11 @@ describe('VerifierFlow', () => {
       const metadata = VerifierMetadata({
         client_name: 'Test Verifier',
         vp_formats: {
+          jwt_vc_json: {
+            alg_values_supported: ['ES256'],
+          },
           jwt_vp_json: {
-            alg: ['ES256'],
+            alg_values_supported: ['ES256'],
           },
           ldp_vp: {
             proof_type: ['JsonWebSignature2020'],
@@ -469,7 +503,7 @@ describe('VerifierFlow', () => {
         }
       )
       mock.method(mockRequestObjectIdProvider, 'generate', async () => 'reqobj-123')
-      mock.method(mockRequestObjectStoreProvider, 'save', async () => {})
+      mock.method(mockRequestObjectStoreProvider, 'save', async () => { })
 
       await assert.rejects(
         verifierFlow.createAuthzRequest(
@@ -489,8 +523,11 @@ describe('VerifierFlow', () => {
       const metadata = VerifierMetadata({
         client_name: 'Test Verifier',
         vp_formats: {
+          jwt_vc_json: {
+            alg_values_supported: ['ES256'],
+          },
           jwt_vp_json: {
-            alg: ['ES256'],
+            alg_values_supported: ['ES256'],
           },
           ldp_vp: {
             proof_type: ['JsonWebSignature2020'],
@@ -526,7 +563,7 @@ describe('VerifierFlow', () => {
         }
       )
       mock.method(mockRequestObjectIdProvider, 'generate', async () => 'reqobj-123')
-      mock.method(mockRequestObjectStoreProvider, 'save', async () => {})
+      mock.method(mockRequestObjectStoreProvider, 'save', async () => { })
 
       await assert.rejects(
         verifierFlow.createAuthzRequest(
@@ -540,6 +577,75 @@ describe('VerifierFlow', () => {
         ),
         { name: 'INVALID_REQUEST' }
       )
+    })
+  })
+  describe('createAuthzRequest', () => {
+    it('should include transaction_data for dc+sd-jwt format in presentation exchange', async () => {
+      const metadata = VerifierMetadata({
+        client_name: 'Test Verifier',
+        vp_formats: {
+          'dc+sd-jwt': {},
+        },
+      })
+      const presentationDefinition = {
+        id: 'test-pd-id',
+        input_descriptors: [
+          {
+            id: 'test_credential',
+            format: { 'dc+sd-jwt': { alg: ['ES256'] } },
+            constraints: {
+              limit_disclosure: 'required',
+              fields: [
+                {
+                  path: ['$.type[*]'],
+                  filter: {
+                    type: 'string',
+                    const: 'TestCredential',
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      }
+
+      mock.method(mockVerifierMetadataStore, 'fetch', async () => metadata)
+      mock.method(mockCnonceProvider, 'generate', async () => 'nonce-123')
+      mock.method(mockCnonceStoreProvider, 'save', async () => { })
+      mock.method(
+        mockCredentialQueryProvider,
+        'generate',
+        async (options: CredentialQueryGenerationOptions) => {
+          return PresentationExchange(options.query as PresentationExchange)
+        }
+      )
+      mock.method(mockTransactionDataProvider, 'generate', (type: string, ids: string[]) => {
+        const data = {
+          type,
+          credential_ids: ids,
+        }
+        return base64url.encode(JSON.stringify(data))
+      })
+
+      const req = await verifierFlow.createAuthzRequest(
+        ClientId('did:key:verifier'),
+        'vp_token',
+        'redirect_uri:did:key:verifier',
+        'direct_post',
+        { presentation_definition: presentationDefinition },
+        false,
+        { transaction_data: { type: 'test_transaction' } }
+      )
+
+      AuthorizationRequest(req)
+      assert.equal(req.response_type, 'vp_token')
+      assert.equal(req.response_mode, 'direct_post')
+      assert.equal(req.nonce, 'nonce-123')
+      assert.ok(req.transaction_data)
+      assert.equal(req.transaction_data.length, 1)
+      const decoded = JSON.parse(base64url.decode(req.transaction_data[0]))
+      assert.equal(decoded.type, 'test_transaction')
+      assert.deepEqual(decoded.credential_ids, ['test_credential'])
     })
   })
 
@@ -579,14 +685,17 @@ describe('VerifierFlow', () => {
         VerifierMetadata({
           client_name: 'test',
           vp_formats: {
+            jwt_vc_json: {
+              alg_values_supported: ['ES256'],
+            },
             jwt_vp_json: {
-              alg: ['ES256'],
+              alg_values_supported: ['ES256'],
             },
           },
         })
       )
       mock.method(mockCnonceStoreProvider, 'validate', async () => true)
-      mock.method(mockCnonceStoreProvider, 'revoke', async () => {})
+      mock.method(mockCnonceStoreProvider, 'revoke', async () => { })
       mock.method(mockCredentialProvider, 'verify', async () => true)
       mock.method(mockDidProvider, 'canHandle', () => true)
       mock.method(mockDidProvider, 'resolveDid', async () => ({

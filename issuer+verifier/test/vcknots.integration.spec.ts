@@ -203,7 +203,6 @@ describe('Vcknots', () => {
         c_nonce_expire_in: 300000,
       })
 
-      // @ts-expect-error TokenResponse is a function, not a type, but we keep this for consistency
       const tokenResponse = accessToken as TokenResponse
 
       assert.ok(tokenResponse)
@@ -242,11 +241,18 @@ describe('Vcknots', () => {
     const metadata = VerifierMetadata({
       client_name: 'Test Verifier',
       vp_formats: {
+        jwt_vc_json: {
+          alg: ['ES256'],
+        },
         jwt_vp_json: {
           alg: ['ES256'],
         },
         ldp_vp: {
           proof_type: ['JsonWebSignature2020'],
+        },
+        'dc+sd-jwt': {
+          'sd-jwt_alg_values': ['ES256', 'ES384'],
+          'kb-jwt_alg_values': ['ES256', 'ES384'],
         },
       },
     })
@@ -393,11 +399,11 @@ describe('Vcknots', () => {
           descriptor_map: [
             {
               id: '2',
-              format: 'jwt_vp',
+              format: 'jwt_vp_json',
               path: '$.vp',
               path_nested: {
                 id: '2',
-                format: 'jwt_vc',
+                format: 'jwt_vc_json',
                 path: '$.verifiableCredential[0]',
               },
             },
