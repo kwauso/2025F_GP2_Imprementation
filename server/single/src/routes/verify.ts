@@ -110,10 +110,38 @@ export const createVerifierRouter = (context: VcknotsContext, baseUrl: string) =
   verifyApp.post('/callback', async (c) => {
     try {
       const verifierId = VerifierClientId(baseUrl)
-      const json = await c.req.json()
+      const contentType = c.req.header('content-type')?.toLowerCase() ?? ''
+
+      let payload: Partial<VerifierAuthorizationResponse> = {}
+      if (contentType.includes('application/json')) {
+        payload = await c.req.json()
+      } else if (contentType.includes('application/x-www-form-urlencoded')) {
+        const form = await c.req.formData()
+        const presentationSubmission = form.get('presentation_submission')
+        if (typeof presentationSubmission === 'string' && presentationSubmission.trim()) {
+          try {
+            payload.presentation_submission = JSON.parse(presentationSubmission)
+          } catch {
+            return c.json(
+              {
+                error: 'invalid_request',
+                error_description: 'presentation_submission must be JSON',
+              },
+              400
+            )
+          }
+        }
+        const vpToken = form.getAll('vp_token').filter((v): v is string => typeof v === 'string')
+        payload.vp_token =
+          vpToken.length === 0 ? undefined : vpToken.length === 1 ? vpToken[0] : vpToken
+        const state = form.get('state')
+        if (typeof state === 'string') {
+          payload.state = state
+        }
+      }
 
       // Validate it using the AuthorizationResponse
-      const authorizationResponse = VerifierAuthorizationResponse(json)
+      const authorizationResponse = VerifierAuthorizationResponse(payload)
 
       // Add additional validation as needed
       await verifierFlow.verifyPresentations(verifierId, authorizationResponse)
