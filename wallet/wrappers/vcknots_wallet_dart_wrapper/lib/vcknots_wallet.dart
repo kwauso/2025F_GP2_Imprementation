@@ -105,9 +105,21 @@ class WalletApi {
         throw Exception(err);
       }
       final jsonStr = _readAndFreeCString(jsonOutPtr.value);
-      final decoded = json.decode(jsonStr) as List<dynamic>;
+
+      // ネイティブ側が VC なしの場合に "null" や空文字を返すケースを考慮して防御的に扱う。
+      final trimmed = jsonStr.trim();
+      if (trimmed.isEmpty || trimmed == 'null') {
+        return <CredentialSummary>[];
+      }
+
+      final decoded = json.decode(trimmed);
+      if (decoded is! List) {
+        throw StateError('Expected a JSON list but got ${decoded.runtimeType}');
+      }
+
       return decoded
-          .map((e) => CredentialSummary.fromJson(e as Map<String, dynamic>))
+          .cast<Map<String, dynamic>>()
+          .map(CredentialSummary.fromJson)
           .toList();
     } finally {
       malloc.free(jsonOutPtr);
