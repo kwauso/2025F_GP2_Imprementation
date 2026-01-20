@@ -24,8 +24,16 @@ A new Flutter FFI plugin project.
   s.platform = :ios, '12.0'
   s.swift_version = '5.0'
   s.vendored_frameworks = 'Frameworks/VcknotsWallet.xcframework'
+  s.static_framework    = true
 
   # Flutter.framework does not contain a i386 slice.
-  s.pod_target_xcconfig = { 'DEFINES_MODULE' => 'YES', 'EXCLUDED_ARCHS[sdk=iphonesimulator*]' => 'i386' }
+  s.pod_target_xcconfig = {
+    'DEFINES_MODULE' => 'YES',
+    'EXCLUDED_ARCHS[sdk=iphonesimulator*]' => 'i386 x86_64'
+  }
+  
+  s.user_target_xcconfig = {
+    'OTHER_LDFLAGS' => '-Wl,-u,_Wallet_Init -Wl,-u,_Wallet_Shutdown -Wl,-u,_Wallet_ListCredentials -Wl,-u,_Wallet_ReceiveFromOffer -Wl,-u,_Wallet_GetCredential -Wl,-u,_Wallet_Present'
+  }
   s.swift_version = '5.0'
 end
