@@ -15,40 +15,143 @@ import 'dart:ffi' as ffi;
 class VcknotsWalletDartWrapperBindings {
   /// Holds the symbol lookup function.
   final ffi.Pointer<T> Function<T extends ffi.NativeType>(String symbolName)
-      _lookup;
+  _lookup;
 
   /// The symbols are looked up in [dynamicLibrary].
   VcknotsWalletDartWrapperBindings(ffi.DynamicLibrary dynamicLibrary)
-      : _lookup = dynamicLibrary.lookup;
+    : _lookup = dynamicLibrary.lookup;
 
   /// The symbols are looked up with [lookup].
   VcknotsWalletDartWrapperBindings.fromLookup(
-      ffi.Pointer<T> Function<T extends ffi.NativeType>(String symbolName)
-          lookup)
-      : _lookup = lookup;
+    ffi.Pointer<T> Function<T extends ffi.NativeType>(String symbolName) lookup,
+  ) : _lookup = lookup;
 
-  int add(
-    int x,
-    int y,
+  // --- Wallet C API bindings ---
+
+  int Wallet_Init(ffi.Pointer<ffi.Char> dataDir) {
+    return _Wallet_Init(dataDir);
+  }
+
+  late final _Wallet_InitPtr =
+      _lookup<ffi.NativeFunction<ffi.Int Function(ffi.Pointer<ffi.Char>)>>(
+        'Wallet_Init',
+      );
+  late final _Wallet_Init =
+      _Wallet_InitPtr.asFunction<int Function(ffi.Pointer<ffi.Char>)>();
+
+  void Wallet_Shutdown() {
+    return _Wallet_Shutdown();
+  }
+
+  late final _Wallet_ShutdownPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function()>>('Wallet_Shutdown');
+  late final _Wallet_Shutdown =
+      _Wallet_ShutdownPtr.asFunction<void Function()>();
+
+  int Wallet_ListCredentials(
+    ffi.Pointer<ffi.Pointer<ffi.Char>> jsonOut,
+    ffi.Pointer<ffi.Pointer<ffi.Char>> errorOut,
   ) {
-    return _add(
-      x,
-      y,
-    );
+    return _Wallet_ListCredentials(jsonOut, errorOut);
   }
 
-  late final _addPtr =
-      _lookup<ffi.NativeFunction<ffi.Int Function(ffi.Int, ffi.Int)>>('add');
-  late final _add = _addPtr.asFunction<int Function(int, int)>();
+  late final _Wallet_ListCredentialsPtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.Int Function(
+            ffi.Pointer<ffi.Pointer<ffi.Char>>,
+            ffi.Pointer<ffi.Pointer<ffi.Char>>,
+          )
+        >
+      >('Wallet_ListCredentials');
+  late final _Wallet_ListCredentials =
+      _Wallet_ListCredentialsPtr.asFunction<
+        int Function(
+          ffi.Pointer<ffi.Pointer<ffi.Char>>,
+          ffi.Pointer<ffi.Pointer<ffi.Char>>,
+        )
+      >();
 
-  void enforceBundling() {
-    return _enforceBundling();
+  int Wallet_ReceiveFromOffer(
+    ffi.Pointer<ffi.Char> offerUrl,
+    ffi.Pointer<ffi.Pointer<ffi.Char>> credentialIdOut,
+    ffi.Pointer<ffi.Pointer<ffi.Char>> errorOut,
+  ) {
+    return _Wallet_ReceiveFromOffer(offerUrl, credentialIdOut, errorOut);
   }
 
-  late final _enforceBundlingPtr =
-      _lookup<ffi.NativeFunction<ffi.Void Function()>>('enforceBundling');
-  late final _enforceBundling =
-      _enforceBundlingPtr.asFunction<void Function()>();
+  late final _Wallet_ReceiveFromOfferPtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.Int Function(
+            ffi.Pointer<ffi.Char>,
+            ffi.Pointer<ffi.Pointer<ffi.Char>>,
+            ffi.Pointer<ffi.Pointer<ffi.Char>>,
+          )
+        >
+      >('Wallet_ReceiveFromOffer');
+  late final _Wallet_ReceiveFromOffer =
+      _Wallet_ReceiveFromOfferPtr.asFunction<
+        int Function(
+          ffi.Pointer<ffi.Char>,
+          ffi.Pointer<ffi.Pointer<ffi.Char>>,
+          ffi.Pointer<ffi.Pointer<ffi.Char>>,
+        )
+      >();
+
+  int Wallet_GetCredential(
+    ffi.Pointer<ffi.Char> id,
+    ffi.Pointer<ffi.Pointer<ffi.Char>> jsonOut,
+    ffi.Pointer<ffi.Pointer<ffi.Char>> errorOut,
+  ) {
+    return _Wallet_GetCredential(id, jsonOut, errorOut);
+  }
+
+  late final _Wallet_GetCredentialPtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.Int Function(
+            ffi.Pointer<ffi.Char>,
+            ffi.Pointer<ffi.Pointer<ffi.Char>>,
+            ffi.Pointer<ffi.Pointer<ffi.Char>>,
+          )
+        >
+      >('Wallet_GetCredential');
+  late final _Wallet_GetCredential =
+      _Wallet_GetCredentialPtr.asFunction<
+        int Function(
+          ffi.Pointer<ffi.Char>,
+          ffi.Pointer<ffi.Pointer<ffi.Char>>,
+          ffi.Pointer<ffi.Pointer<ffi.Char>>,
+        )
+      >();
+
+  int Wallet_Present(
+    ffi.Pointer<ffi.Char> requestUri,
+    ffi.Pointer<ffi.Char> credentialId,
+    ffi.Pointer<ffi.Pointer<ffi.Char>> errorOut,
+  ) {
+    return _Wallet_Present(requestUri, credentialId, errorOut);
+  }
+
+  late final _Wallet_PresentPtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.Int Function(
+            ffi.Pointer<ffi.Char>,
+            ffi.Pointer<ffi.Char>,
+            ffi.Pointer<ffi.Pointer<ffi.Char>>,
+          )
+        >
+      >('Wallet_Present');
+  late final _Wallet_Present =
+      _Wallet_PresentPtr.asFunction<
+        int Function(
+          ffi.Pointer<ffi.Char>,
+          ffi.Pointer<ffi.Char>,
+          ffi.Pointer<ffi.Pointer<ffi.Char>>,
+        )
+      >();
 }
 
 typedef __int8_t = ffi.SignedChar;
@@ -143,9 +246,10 @@ typedef __darwin_useconds_t = __uint32_t;
 
 final class __darwin_pthread_handler_rec extends ffi.Struct {
   /// Routine to call
-  external ffi
-      .Pointer<ffi.NativeFunction<ffi.Void Function(ffi.Pointer<ffi.Void>)>>
-      __routine;
+  external ffi.Pointer<
+    ffi.NativeFunction<ffi.Void Function(ffi.Pointer<ffi.Void>)>
+  >
+  __routine;
 
   /// Argument to pass
   external ffi.Pointer<ffi.Void> __arg;

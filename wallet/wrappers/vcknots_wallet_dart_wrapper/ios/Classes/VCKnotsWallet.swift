@@ -12,6 +12,6 @@ public class VCKnotsWalletCorePlugin: NSObject, FlutterPlugin {
   }
 
   public func dummyMethodToEnforceBundling() {
-    enforceBundling()
+    //enforceBundling()
   }
 }
