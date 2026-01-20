@@ -10,7 +10,24 @@ class WalletDemoApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(home: WalletHomePage());
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData(
+        useMaterial3: true,
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blueAccent),
+        scaffoldBackgroundColor: const Color(0xFFF3F4F6),
+        inputDecorationTheme: const InputDecorationTheme(
+          filled: true,
+          fillColor: Colors.white,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.all(Radius.circular(14)),
+            borderSide: BorderSide.none,
+          ),
+          contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        ),
+      ),
+      home: const WalletHomePage(),
+    );
   }
 }
 
@@ -153,107 +170,274 @@ class _WalletHomePageState extends State<WalletHomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('VCKnots Wallet Demo')),
+      appBar: AppBar(
+        elevation: 0,
+        centerTitle: true,
+        title: const Text('VCKnots Wallet'),
+      ),
       body: _loading && !_initialized
           ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Issuer から VC を受け取り、VP を提示するデモウォレットです。',
-                    style: TextStyle(fontSize: 16),
-                  ),
-                  const SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: _loading ? null : _initWallet,
-                    child: const Text('Re-initialize Wallet'),
-                  ),
-                  const SizedBox(height: 24),
-                  const Text(
-                    '1. VC 受領 (OID4VCI offer URL)',
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 8),
-                  TextField(
-                    controller: _offerController,
-                    decoration: const InputDecoration(
-                      border: OutlineInputBorder(),
-                      hintText:
-                          'openid-credential-offer://?credential_offer=...',
+          : SafeArea(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  children: [
+                    _HeaderStatus(
+                      initialized: _initialized,
+                      loading: _loading,
+                      onRefresh: _loading ? null : _initWallet,
                     ),
-                  ),
-                  const SizedBox(height: 8),
-                  ElevatedButton(
-                    onPressed: _loading ? null : _receiveCredential,
-                    child: const Text('Receive Credential'),
-                  ),
-                  const SizedBox(height: 24),
-                  const Text(
-                    '2. 保存済み VC 一覧',
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 8),
-                  _credentials.isEmpty
-                      ? const Text('No credentials stored.')
-                      : Column(
-                          children: _credentials
-                              .map(
-                                (c) => RadioListTile<String>(
-                                  title: Text(
-                                    '${c.type ?? 'Unknown'} from ${c.issuer ?? '-'}',
-                                  ),
-                                  subtitle: Text(
-                                    'ID: ${c.id}\nReceived: ${c.receivedAt.toIso8601String()}',
-                                  ),
-                                  value: c.id,
-                                  groupValue: _selectedCredentialId,
-                                  onChanged: (v) {
-                                    setState(() {
-                                      _selectedCredentialId = v;
-                                    });
-                                  },
-                                ),
-                              )
-                              .toList(),
+                    const SizedBox(height: 16),
+                    _SectionCard(
+                      icon: Icons.download_outlined,
+                      title: 'VCを受け取る',
+                      subtitle: 'Issuer からの offer URL を貼り付けて、VC をウォレットに追加します。',
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          TextField(
+                            controller: _offerController,
+                            decoration: const InputDecoration(
+                              hintText:
+                                  'openid-credential-offer://?credential_offer=...',
+                            ),
+                            maxLines: 2,
+                          ),
+                          const SizedBox(height: 12),
+                          FilledButton.icon(
+                            onPressed: _loading ? null : _receiveCredential,
+                            icon: const Icon(Icons.add_circle_outline),
+                            label: const Text('VC を受領する'),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    _SectionCard(
+                      icon: Icons.credit_card_rounded,
+                      title: '保存済みのカード',
+                      subtitle: 'ウォレット内の VC を一覧で確認し、提示に使うものを選択します。',
+                      child: _credentials.isEmpty
+                          ? const Padding(
+                              padding: EdgeInsets.symmetric(vertical: 12),
+                              child: Text('まだカードはありません。まずは VC を受領してください。'),
+                            )
+                          : Column(
+                              children: _credentials
+                                  .map(
+                                    (c) => Card(
+                                      elevation: 0,
+                                      margin: const EdgeInsets.symmetric(
+                                        vertical: 4,
+                                      ),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(14),
+                                      ),
+                                      child: RadioListTile<String>(
+                                        title: Text(
+                                          c.type ?? 'Unknown credential',
+                                          style: const TextStyle(
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                        subtitle: Text(
+                                          '${c.issuer ?? '-'}\nReceived: ${c.receivedAt.toIso8601String()}',
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                        value: c.id,
+                                        groupValue: _selectedCredentialId,
+                                        onChanged: (v) {
+                                          setState(() {
+                                            _selectedCredentialId = v;
+                                          });
+                                        },
+                                      ),
+                                    ),
+                                  )
+                                  .toList(),
+                            ),
+                    ),
+                    const SizedBox(height: 16),
+                    _SectionCard(
+                      icon: Icons.qr_code_scanner_rounded,
+                      title: 'VPを提示する',
+                      subtitle: 'Verifier からの OID4VP Request URI を貼り付けて提示します。',
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          TextField(
+                            controller: _requestUriController,
+                            decoration: const InputDecoration(
+                              hintText: 'openid4vp://authorize?...',
+                            ),
+                            maxLines: 2,
+                          ),
+                          const SizedBox(height: 12),
+                          FilledButton.icon(
+                            onPressed: _loading ? null : _present,
+                            icon: const Icon(Icons.send_rounded),
+                            label: const Text('VP を提示する'),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    _SectionCard(
+                      icon: Icons.notes_rounded,
+                      title: 'アクティビティログ',
+                      subtitle: '最近の操作の結果やエラーを表示します。',
+                      child: Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade100,
+                          borderRadius: BorderRadius.circular(10),
                         ),
-                  const SizedBox(height: 24),
-                  const Text(
-                    '3. VP 提示 (OID4VP request URI)',
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 8),
-                  TextField(
-                    controller: _requestUriController,
-                    decoration: const InputDecoration(
-                      border: OutlineInputBorder(),
-                      hintText: 'openid4vp://authorize?...',
+                        child: Text(
+                          _log,
+                          style: const TextStyle(fontSize: 12),
+                          softWrap: true,
+                        ),
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 8),
-                  ElevatedButton(
-                    onPressed: _loading ? null : _present,
-                    child: const Text('Present VP'),
-                  ),
-                  const SizedBox(height: 24),
-                  const Text(
-                    'Log',
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 8),
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      border: Border.all(color: Colors.grey),
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Text(_log, style: const TextStyle(fontSize: 12)),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
+    );
+  }
+}
+
+class _HeaderStatus extends StatelessWidget {
+  const _HeaderStatus({
+    required this.initialized,
+    required this.loading,
+    required this.onRefresh,
+  });
+
+  final bool initialized;
+  final bool loading;
+  final VoidCallback? onRefresh;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+            color: initialized
+                ? colorScheme.primaryContainer
+                : colorScheme.errorContainer,
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                initialized ? Icons.check_circle : Icons.sync_problem,
+                size: 18,
+                color: initialized
+                    ? colorScheme.onPrimaryContainer
+                    : colorScheme.onErrorContainer,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                initialized ? 'Connected' : 'Not initialized',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: initialized
+                      ? colorScheme.onPrimaryContainer
+                      : colorScheme.onErrorContainer,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const Spacer(),
+        IconButton(
+          onPressed: loading ? null : onRefresh,
+          tooltip: '再接続',
+          icon: const Icon(Icons.refresh_rounded),
+        ),
+      ],
+    );
+  }
+}
+
+class _SectionCard extends StatelessWidget {
+  const _SectionCard({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.child,
+  });
+
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                CircleAvatar(
+                  radius: 18,
+                  backgroundColor: Theme.of(
+                    context,
+                  ).colorScheme.primaryContainer,
+                  child: Icon(
+                    icon,
+                    color: Theme.of(context).colorScheme.onPrimaryContainer,
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        subtitle,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey.shade600,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            child,
+          ],
+        ),
+      ),
     );
   }
 }
