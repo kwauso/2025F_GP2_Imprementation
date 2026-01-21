@@ -388,202 +388,137 @@ class _StackedCards extends StatelessWidget {
       return const SizedBox.shrink();
     }
 
-    // 最大3枚まで重ねて表示し、残りは数で表示
-    final visibleCards = credentials.take(3).toList();
-    final remainingCount = credentials.length - visibleCards.length;
+    // 最初の1枚のみ表示
+    final credential = credentials.first;
+    final isSelected = credential.id == selectedCredentialId;
 
-    return SizedBox(
-      height: 200 + (visibleCards.length - 1) * 8.0 + 60,
-      child: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          // カードを後ろから順に重ねる
-          ...visibleCards.asMap().entries.map((entry) {
-            final index = entry.key;
-            final credential = entry.value;
-            final isSelected = credential.id == selectedCredentialId;
-            final baseOffset = index * 8.0 + 30.0; // 上部にマージンを追加
-            // 選択されたカードは上に浮き上がる
-            final topOffset = isSelected ? baseOffset - 30.0 : baseOffset;
-
-            return AnimatedPositioned(
-              duration: const Duration(milliseconds: 300),
-              curve: Curves.easeOutCubic,
-              top: topOffset,
-              left: 0,
-              right: 0,
-              child: GestureDetector(
-                onTap: () => onCardSelected(credential.id),
-                child: Transform.scale(
-                  scale: isSelected ? 1.0 : 0.98,
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 300),
-                    curve: Curves.easeOutCubic,
-                    height: 200,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(20),
-                      gradient: LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: isSelected
-                            ? [
-                                Theme.of(context).colorScheme.primary,
-                                Theme.of(context).colorScheme.primaryContainer,
-                              ]
-                            : [Colors.white, Colors.grey.shade50],
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: isSelected
-                              ? Theme.of(
-                                  context,
-                                ).colorScheme.primary.withOpacity(0.4)
-                              : Colors.black.withOpacity(0.1),
-                          blurRadius: isSelected ? 20 : 8,
-                          offset: Offset(0, isSelected ? 8 : 2),
-                          spreadRadius: isSelected ? 2 : 0,
-                        ),
-                      ],
-                      border: isSelected
-                          ? Border.all(
-                              color: Theme.of(context).colorScheme.primary,
-                              width: 2,
-                            )
-                          : null,
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(20),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Container(
-                                width: 40,
-                                height: 40,
-                                decoration: BoxDecoration(
-                                  color: isSelected
-                                      ? Theme.of(context).colorScheme.onPrimary
-                                      : Theme.of(
-                                          context,
-                                        ).colorScheme.primaryContainer,
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                                child: Icon(
-                                  Icons.credit_card_rounded,
-                                  color: isSelected
-                                      ? Theme.of(context).colorScheme.primary
-                                      : Theme.of(
-                                          context,
-                                        ).colorScheme.onPrimaryContainer,
-                                  size: 24,
-                                ),
-                              ),
-                              const Spacer(),
-                              if (isSelected)
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 8,
-                                    vertical: 4,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: Theme.of(
-                                      context,
-                                    ).colorScheme.onPrimary,
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: Text(
-                                    '選択中',
-                                    style: TextStyle(
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.w600,
-                                      color: Theme.of(
-                                        context,
-                                      ).colorScheme.primary,
-                                    ),
-                                  ),
-                                ),
-                            ],
-                          ),
-                          const SizedBox(height: 16),
-                          Text(
-                            credential.type ?? 'Unknown credential',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: isSelected
-                                  ? Theme.of(context).colorScheme.onPrimary
-                                  : Colors.black87,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            credential.issuer ?? '-',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: isSelected
-                                  ? Theme.of(
-                                      context,
-                                    ).colorScheme.onPrimary.withOpacity(0.8)
-                                  : Colors.grey.shade600,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          const Spacer(),
-                          Text(
-                            '受領日: ${_formatDate(credential.receivedAt)}',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: isSelected
-                                  ? Theme.of(
-                                      context,
-                                    ).colorScheme.onPrimary.withOpacity(0.7)
-                                  : Colors.grey.shade500,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
+    return GestureDetector(
+      onTap: () => onCardSelected(credential.id),
+      child: Transform.scale(
+        scale: isSelected ? 1.0 : 0.98,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOutCubic,
+          margin: EdgeInsets.only(top: isSelected ? 0 : 30.0),
+          height: 200,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(20),
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: isSelected
+                  ? [
+                      Theme.of(context).colorScheme.primary,
+                      Theme.of(context).colorScheme.primaryContainer,
+                    ]
+                  : [Colors.white, Colors.grey.shade50],
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: isSelected
+                    ? Theme.of(context).colorScheme.primary.withOpacity(0.4)
+                    : Colors.black.withOpacity(0.1),
+                blurRadius: isSelected ? 20 : 8,
+                offset: Offset(0, isSelected ? 8 : 2),
+                spreadRadius: isSelected ? 2 : 0,
               ),
-            );
-          }).toList(),
-          // 残りのカード数を表示
-          if (remainingCount > 0)
-            Positioned(
-              top: visibleCards.length * 8.0 + 200 + 60,
-              left: 0,
-              right: 0,
-              child: Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(20),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
+            ],
+            border: isSelected
+                ? Border.all(
+                    color: Theme.of(context).colorScheme.primary,
+                    width: 2,
+                  )
+                : null,
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: isSelected
+                            ? Theme.of(context).colorScheme.onPrimary
+                            : Theme.of(context).colorScheme.primaryContainer,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Icon(
+                        Icons.credit_card_rounded,
+                        color: isSelected
+                            ? Theme.of(context).colorScheme.primary
+                            : Theme.of(context).colorScheme.onPrimaryContainer,
+                        size: 24,
+                      ),
                     ),
+                    const Spacer(),
+                    if (isSelected)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.onPrimary,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          '選択中',
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w600,
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
+                        ),
+                      ),
                   ],
                 ),
-                child: Center(
-                  child: Text(
-                    '他 $remainingCount 枚のカード',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey.shade600,
-                      fontWeight: FontWeight.w500,
-                    ),
+                const SizedBox(height: 16),
+                Text(
+                  credential.type ?? 'Unknown credential',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: isSelected
+                        ? Theme.of(context).colorScheme.onPrimary
+                        : Colors.black87,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  credential.issuer ?? '-',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: isSelected
+                        ? Theme.of(
+                            context,
+                          ).colorScheme.onPrimary.withOpacity(0.8)
+                        : Colors.grey.shade600,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const Spacer(),
+                Text(
+                  '受領日: ${_formatDate(credential.receivedAt)}',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: isSelected
+                        ? Theme.of(
+                            context,
+                          ).colorScheme.onPrimary.withOpacity(0.7)
+                        : Colors.grey.shade500,
                   ),
                 ),
-              ),
+              ],
             ),
-        ],
+          ),
+        ),
       ),
     );
   }
