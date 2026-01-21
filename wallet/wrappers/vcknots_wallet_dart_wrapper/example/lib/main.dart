@@ -56,9 +56,16 @@ class _WalletHomePageState extends State<WalletHomePage> {
   }
 
   Future<void> _initWallet() async {
+    // フォーカスを外す
+    if (mounted) {
+      FocusScope.of(context).unfocus();
+    }
     setState(() {
       _loading = true;
       _log = 'Initializing wallet...';
+      // テキストフィールドをクリア
+      _offerController.clear();
+      _requestUriController.clear();
     });
     try {
       await _wallet.init();
@@ -406,12 +413,10 @@ class _StackedCards extends StatelessWidget {
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: isSelected
-                  ? [
-                      Theme.of(context).colorScheme.primary,
-                      Theme.of(context).colorScheme.primaryContainer,
-                    ]
-                  : [Colors.white, Colors.grey.shade50],
+              colors: [
+                Theme.of(context).colorScheme.primary,
+                Theme.of(context).colorScheme.primaryContainer,
+              ],
             ),
             boxShadow: [
               BoxShadow(
@@ -441,16 +446,12 @@ class _StackedCards extends StatelessWidget {
                       width: 40,
                       height: 40,
                       decoration: BoxDecoration(
-                        color: isSelected
-                            ? Theme.of(context).colorScheme.onPrimary
-                            : Theme.of(context).colorScheme.primaryContainer,
+                        color: Colors.white.withOpacity(0.3),
                         borderRadius: BorderRadius.circular(10),
                       ),
-                      child: Icon(
+                      child: const Icon(
                         Icons.credit_card_rounded,
-                        color: isSelected
-                            ? Theme.of(context).colorScheme.primary
-                            : Theme.of(context).colorScheme.onPrimaryContainer,
+                        color: Colors.white,
                         size: 24,
                       ),
                     ),
@@ -479,12 +480,10 @@ class _StackedCards extends StatelessWidget {
                 const SizedBox(height: 16),
                 Text(
                   credential.type ?? 'Unknown credential',
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
-                    color: isSelected
-                        ? Theme.of(context).colorScheme.onPrimary
-                        : Colors.black87,
+                    color: Colors.white,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -494,11 +493,7 @@ class _StackedCards extends StatelessWidget {
                   credential.issuer ?? '-',
                   style: TextStyle(
                     fontSize: 14,
-                    color: isSelected
-                        ? Theme.of(
-                            context,
-                          ).colorScheme.onPrimary.withOpacity(0.8)
-                        : Colors.grey.shade600,
+                    color: Colors.white.withOpacity(0.9),
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -508,11 +503,7 @@ class _StackedCards extends StatelessWidget {
                   '受領日: ${_formatDate(credential.receivedAt)}',
                   style: TextStyle(
                     fontSize: 12,
-                    color: isSelected
-                        ? Theme.of(
-                            context,
-                          ).colorScheme.onPrimary.withOpacity(0.7)
-                        : Colors.grey.shade500,
+                    color: Colors.white.withOpacity(0.8),
                   ),
                 ),
               ],
