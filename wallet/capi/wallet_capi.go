@@ -9,6 +9,7 @@ import (
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"
+	"crypto/sha256"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -105,8 +106,8 @@ func (f *fileKeyEntry) PublicKey() jose.JSONWebKey {
 
 func (f *fileKeyEntry) Sign(data []byte) ([]byte, error) {
 	// ES256 / P-256: 32byte R + 32byte S（IEEE P1363 形式）
-	hash := data
-	r, s, err := ecdsa.Sign(rand.Reader, f.privateKey, hash)
+	hash := sha256.Sum256(data)
+	r, s, err := ecdsa.Sign(rand.Reader, f.privateKey, hash[:])
 	if err != nil {
 		return nil, fmt.Errorf("failed to sign data: %w", err)
 	}

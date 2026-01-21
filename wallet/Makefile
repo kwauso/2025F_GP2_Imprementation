@@ -89,7 +89,7 @@ ios-arm64: ios-modulemap
 		GOARCH=arm64 \
 		CC=${IPHONE_SDK_CLANG} \
 		CGO_CFLAGS="-isysroot ${IPHONE_SDK}" \
-		go build -ldflags="-s -w" -trimpath -buildmode=c-archive -o ${OUT_DIR}/ios/ios-arm64/${LIB_NAME}.a
+		go build -ldflags="-s -w" -trimpath -buildmode=c-archive -o ${OUT_DIR}/ios/ios-arm64/${LIB_NAME}.a ./capi
 		
 		mkdir -p ${OUT_DIR}/ios/ios-arm64/include
 		mv ${OUT_DIR}/ios/ios-arm64/${LIB_NAME}.h ${OUT_DIR}/ios/ios-arm64/include/${LIB_NAME}.h
@@ -102,14 +102,14 @@ ios-simulator:
 		GOARCH=amd64 \
 		CC="${IPHONE_SIMULATOR_SDK_CLANG} -arch x86_64" \
 		CGO_CFLAGS="-isysroot ${IPHONE_SIMULATOR_SDK}" \
-		go build -ldflags="-s -w" -trimpath -buildmode=c-archive -o ${OUT_DIR}/ios/ios-simulator-x86_64/${LIB_NAME}.a
+		go build -ldflags="-s -w" -trimpath -buildmode=c-archive -o ${OUT_DIR}/ios/ios-simulator-x86_64/${LIB_NAME}.a ./capi
 
 		CGO_ENABLED=1 \
 		GOOS=ios \
 		GOARCH=arm64 \
 		CC="${IPHONE_SIMULATOR_SDK_CLANG} -arch arm64" \
 		CGO_CFLAGS="-isysroot ${IPHONE_SIMULATOR_SDK}" \
-		go build -ldflags="-s -w" -trimpath -buildmode=c-archive -o ${OUT_DIR}/ios/ios-simulator-arm64/${LIB_NAME}.a
+		go build -ldflags="-s -w" -trimpath -buildmode=c-archive -o ${OUT_DIR}/ios/ios-simulator-arm64/${LIB_NAME}.a ./capi
 
 		mkdir -p ${OUT_DIR}/ios/ios-simulator/include
 		lipo -create ${OUT_DIR}/ios/ios-simulator-x86_64/${LIB_NAME}.a ${OUT_DIR}/ios/ios-simulator-arm64/${LIB_NAME}.a -output ${OUT_DIR}/ios/ios-simulator/${LIB_NAME}.a
