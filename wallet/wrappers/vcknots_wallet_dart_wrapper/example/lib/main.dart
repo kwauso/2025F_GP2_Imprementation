@@ -224,6 +224,7 @@ class _WalletHomePageState extends State<WalletHomePage> {
                                       MaterialPageRoute(
                                         builder: (context) =>
                                             CredentialListPage(
+                                              wallet: _wallet,
                                               credentials: _credentials,
                                               selectedCredentialId:
                                                   _selectedCredentialId,
@@ -231,7 +232,6 @@ class _WalletHomePageState extends State<WalletHomePage> {
                                                 setState(() {
                                                   _selectedCredentialId = id;
                                                 });
-                                                Navigator.pop(context);
                                               },
                                             ),
                                       ),
@@ -593,23 +593,46 @@ class _SectionCard extends StatelessWidget {
   }
 }
 
-class CredentialListPage extends StatelessWidget {
+class CredentialListPage extends StatefulWidget {
   const CredentialListPage({
     super.key,
+    required this.wallet,
     required this.credentials,
     required this.selectedCredentialId,
     required this.onCardSelected,
   });
 
+  final WalletApi wallet;
   final List<CredentialSummary> credentials;
   final String? selectedCredentialId;
   final ValueChanged<String> onCardSelected;
 
   @override
+  State<CredentialListPage> createState() => _CredentialListPageState();
+}
+
+class _CredentialListPageState extends State<CredentialListPage> {
+  late String? _selectedCredentialId;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedCredentialId = widget.selectedCredentialId;
+  }
+
+  @override
+  void didUpdateWidget(CredentialListPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.selectedCredentialId != widget.selectedCredentialId) {
+      _selectedCredentialId = widget.selectedCredentialId;
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(elevation: 0, title: const Text('保存済みのカード一覧')),
-      body: credentials.isEmpty
+      body: widget.credentials.isEmpty
           ? Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -635,13 +658,32 @@ class CredentialListPage extends StatelessWidget {
                 mainAxisSpacing: 12,
                 childAspectRatio: 0.75,
               ),
-              itemCount: credentials.length,
+              itemCount: widget.credentials.length,
               itemBuilder: (context, index) {
-                final credential = credentials[index];
-                final isSelected = credential.id == selectedCredentialId;
+                final credential = widget.credentials[index];
+                final isSelected = credential.id == _selectedCredentialId;
 
                 return GestureDetector(
-                  onTap: () => onCardSelected(credential.id),
+                  onTap: () {
+                    // シングルクリックで選択
+                    setState(() {
+                      _selectedCredentialId = credential.id;
+                    });
+                    widget.onCardSelected(credential.id);
+                  },
+                  onDoubleTap: () {
+                    // ダブルクリックで詳細ページに遷移
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => CredentialDetailPage(
+                          wallet: widget.wallet,
+                          credentialId: credential.id,
+                          credentialSummary: credential,
+                        ),
+                      ),
+                    );
+                  },
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 200),
                     curve: Curves.easeInOut,
@@ -789,5 +831,187 @@ class CredentialListPage extends StatelessWidget {
 
   String _formatDate(DateTime date) {
     return '${date.year}/${date.month.toString().padLeft(2, '0')}/${date.day.toString().padLeft(2, '0')}';
+  }
+}
+
+class CredentialDetailPage extends StatefulWidget {
+  const CredentialDetailPage({
+    super.key,
+    required this.wallet,
+    required this.credentialId,
+    required this.credentialSummary,
+  });
+
+  final WalletApi wallet;
+  final String credentialId;
+  final CredentialSummary credentialSummary;
+
+  @override
+  State<CredentialDetailPage> createState() => _CredentialDetailPageState();
+}
+
+class _CredentialDetailPageState extends State<CredentialDetailPage> {
+  CredentialDetail? _credentialDetail;
+  bool _loading = false;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCredentialDetail();
+  }
+
+  Future<void> _loadCredentialDetail() async {
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    try {
+      final detail = await widget.wallet.getCredential(widget.credentialId);
+      setState(() {
+        _credentialDetail = detail;
+        _loading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _error = e.toString();
+        _loading = false;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(elevation: 0, title: const Text('VC詳細')),
+      body: _loading
+          ? const Center(child: CircularProgressIndicator())
+          : _error != null
+          ? Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.error_outline,
+                    size: 64,
+                    color: Colors.red.shade300,
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'エラーが発生しました',
+                    style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
+                  ),
+                  const SizedBox(height: 8),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 32),
+                    child: Text(
+                      _error!,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey.shade500,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  FilledButton(
+                    onPressed: _loadCredentialDetail,
+                    child: const Text('再読み込み'),
+                  ),
+                ],
+              ),
+            )
+          : _credentialDetail == null
+          ? const Center(child: Text('VCが見つかりませんでした'))
+          : SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _SectionCard(
+                    icon: Icons.info_outline,
+                    title: '基本情報',
+                    subtitle: '',
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _InfoRow(label: 'ID', value: _credentialDetail!.id),
+                        const SizedBox(height: 12),
+                        _InfoRow(
+                          label: '発行者',
+                          value: _credentialDetail!.issuer,
+                        ),
+                        const SizedBox(height: 12),
+                        _InfoRow(
+                          label: 'タイプ',
+                          value: _credentialDetail!.types.join(', '),
+                        ),
+                        const SizedBox(height: 12),
+                        _InfoRow(
+                          label: '受領日',
+                          value: _formatDate(_credentialDetail!.receivedAt),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  _SectionCard(
+                    icon: Icons.code,
+                    title: 'JWT',
+                    subtitle: '',
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade100,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: SelectableText(
+                        _credentialDetail!.rawJwt,
+                        style: const TextStyle(
+                          fontSize: 11,
+                          fontFamily: 'monospace',
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+    );
+  }
+
+  String _formatDate(DateTime date) {
+    return '${date.year}/${date.month.toString().padLeft(2, '0')}/${date.day.toString().padLeft(2, '0')} ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
+  }
+}
+
+class _InfoRow extends StatelessWidget {
+  const _InfoRow({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(
+          width: 80,
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: Colors.grey.shade700,
+            ),
+          ),
+        ),
+        Expanded(
+          child: SelectableText(value, style: const TextStyle(fontSize: 14)),
+        ),
+      ],
+    );
   }
 }
